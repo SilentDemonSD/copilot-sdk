@@ -5,7 +5,7 @@ Type definitions for the Copilot SDK
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Awaitable, Callable, Dict, List, Literal, TypedDict, Union
+from typing import Any, Awaitable, Callable, Dict, List, Literal, Optional, TypedDict, Union
 
 from typing_extensions import NotRequired
 
@@ -86,7 +86,7 @@ class Tool:
     name: str
     description: str
     handler: ToolHandler
-    parameters: Dict[str, Any] | None = None
+    parameters: Optional[Dict[str, Any]] = None
 
 
 # System message configuration (discriminated union)
@@ -185,7 +185,7 @@ class CustomAgentConfig(TypedDict, total=False):
     display_name: NotRequired[str]  # Display name for UI purposes
     description: NotRequired[str]  # Description of what the agent does
     # List of tool names the agent can use
-    tools: NotRequired[List[str] | None]
+    tools: NotRequired[Optional[List[str]]]
     prompt: str  # The prompt content for the agent
     # MCP servers specific to agent
     mcp_servers: NotRequired[Dict[str, MCPServerConfig]]

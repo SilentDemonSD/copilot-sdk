@@ -575,7 +575,7 @@ class CopilotClient:
 
         return await self._client.request("ping", {"message": message})
 
-    async def get_status(self) -> "GetStatusResponse":
+    async def get_status(self) -> GetStatusResponse:
         """
         Get CLI status including version and protocol information.
 
@@ -594,7 +594,7 @@ class CopilotClient:
 
         return await self._client.request("status.get", {})
 
-    async def get_auth_status(self) -> "GetAuthStatusResponse":
+    async def get_auth_status(self) -> GetAuthStatusResponse:
         """
         Get current authentication status.
 
@@ -614,7 +614,7 @@ class CopilotClient:
 
         return await self._client.request("auth.getStatus", {})
 
-    async def list_models(self) -> List["ModelInfo"]:
+    async def list_models(self) -> List[ModelInfo]:
         """
         List available models with their metadata.
 

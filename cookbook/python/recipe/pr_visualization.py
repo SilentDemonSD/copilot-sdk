@@ -138,6 +138,7 @@ The current working directory is: {os.getcwd()}
     # Initial prompt - let Copilot figure out the details
     print("\n📊 Starting analysis...\n")
 
+    # Use a longer timeout (5 minutes) for complex operations like PR fetching and chart generation
     await session.send_and_wait(
         {
             "prompt": f"""
@@ -148,7 +149,8 @@ Then generate a bar chart image showing the distribution of PR ages
 Save the chart as "pr-age-chart.png" in the current directory.
 Finally, summarize the PR health - average age, oldest PR, and how many might be considered stale.
 """
-        }
+        },
+        timeout=300.0,  # 5 minutes for complex GitHub API + chart generation
     )
 
     # Interactive loop
@@ -172,7 +174,7 @@ Finally, summarize the PR health - average age, oldest PR, and how many might be
             break
 
         if user_input:
-            await session.send_and_wait({"prompt": user_input})
+            await session.send_and_wait({"prompt": user_input}, timeout=300.0)
 
     await session.destroy()
     await client.stop()

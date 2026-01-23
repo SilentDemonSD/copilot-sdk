@@ -22,6 +22,8 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
     "python-dateutil>=2.9.0.post0",
@@ -64,7 +66,11 @@ select = [
     "UP", # pyupgrade
 ]
 ignore = [
-    "UP006",
+    "UP006",  # Use `type` instead of `Type` for type annotation
+    "UP007",  # Use `X | Y` for type annotations (not compatible with Python 3.8/3.9 without PEP 604)
+    "UP035",  # Use `typing.X` instead of deprecated import
+    "UP037",  # Remove quotes from type annotation (keep for forward references)
+    "UP045",  # Use `X | None` for type annotations (Optional[X] is more compatible)
 ]
 
 [tool.ruff.format]
