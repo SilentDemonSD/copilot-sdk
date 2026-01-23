@@ -2,6 +2,8 @@
 Tests for MCP servers and custom agents functionality
 """
 
+from __future__ import annotations
+
 import pytest
 
 from copilot import CustomAgentConfig, MCPServerConfig

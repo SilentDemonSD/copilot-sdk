@@ -201,9 +201,9 @@ class SessionConfig(TypedDict, total=False):
     tools: List[Tool]
     system_message: SystemMessageConfig  # System message configuration
     # List of tool names to allow (takes precedence over excluded_tools)
-    available_tools: list[str]
+    available_tools: List[str]
     # List of tool names to disable (ignored if available_tools is set)
-    excluded_tools: list[str]
+    excluded_tools: List[str]
     # Handler for permission requests from the server
     on_permission_request: PermissionHandler
     # Custom provider configuration (BYOK - Bring Your Own Key)
