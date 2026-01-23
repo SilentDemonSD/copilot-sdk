@@ -1,25 +1,35 @@
 #!/usr/bin/env python3
+"""
+PR Age Chart Generator - Visualizes pull request age distribution.
 
-import subprocess
-import sys
+This tool detects the current Git repo or accepts a repo as input,
+then uses Copilot to fetch PR data and generate a chart image.
+"""
+
+import asyncio
 import os
 import re
+import subprocess
+import sys
+
 from copilot import CopilotClient
 
 # ============================================================================
 # Git & GitHub Detection
 # ============================================================================
 
+
 def is_git_repo():
     try:
         subprocess.run(
             ["git", "rev-parse", "--git-dir"],
             check=True,
-            capture_output=True
+            capture_output=True,
         )
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
+
 
 def get_github_remote():
     try:
@@ -27,23 +37,23 @@ def get_github_remote():
             ["git", "remote", "get-url", "origin"],
             check=True,
             capture_output=True,
-            text=True
+            text=True,
         )
         remote_url = result.stdout.strip()
 
-        # Handle SSH: git@github.com:owner/repo.git
-        ssh_match = re.search(r"git@github\.com:(.+/.+?)(?:\.git)?$", remote_url)
-        if ssh_match:
-            return ssh_match.group(1)
+        if ssh_match := re.search(
+            r"git@github\.com:(.+/.+?)(?:\.git)?$", remote_url
+        ):
+            return ssh_match[1]
 
         # Handle HTTPS: https://github.com/owner/repo.git
-        https_match = re.search(r"https://github\.com/(.+/.+?)(?:\.git)?$", remote_url)
-        if https_match:
-            return https_match.group(1)
-
-        return None
+        https_match = re.search(
+            r"https://github\.com/(.+/.+?)(?:\.git)?$", remote_url
+        )
+        return https_match[1] if https_match else None
     except (subprocess.CalledProcessError, FileNotFoundError):
         return None
+
 
 def parse_args():
     args = sys.argv[1:]
@@ -53,14 +63,17 @@ def parse_args():
             return {"repo": args[idx + 1]}
     return {}
 
+
 def prompt_for_repo():
     return input("Enter GitHub repo (owner/repo): ").strip()
+
 
 # ============================================================================
 # Main Application
 # ============================================================================
 
-def main():
+
+async def main():
     print("🔍 PR Age Chart Generator\n")
 
     # Determine the repository
@@ -88,14 +101,14 @@ def main():
 
     owner, repo_name = repo.split("/", 1)
 
-    # Create Copilot client - no custom tools needed!
-    client = CopilotClient(log_level="error")
-    client.start()
+    # Create Copilot client
+    client = CopilotClient({"log_level": "error"})
+    await client.start()
 
-    session = client.create_session(
-        model="gpt-5",
-        system_message={
-            "content": f"""
+    session = await client.create_session(
+        {
+            "system_message": {
+                "content": f"""
 <context>
 You are analyzing pull requests for the GitHub repository: {owner}/{repo_name}
 The current working directory is: {os.getcwd()}
@@ -108,31 +121,35 @@ The current working directory is: {os.getcwd()}
 - Be concise in your responses
 </instructions>
 """
+            }
         }
     )
 
     # Set up event handling
     def handle_event(event):
-        if event["type"] == "assistant.message":
-            print(f"\n🤖 {event['data']['content']}\n")
-        elif event["type"] == "tool.execution_start":
-            print(f"  ⚙️  {event['data']['toolName']}")
+        """Handle incoming session events."""
+        if event.type == "assistant.message":
+            print(f"\n🤖 {event.data.content}\n")
+        elif event.type == "tool.execution_start":
+            print(f"  ⚙️  {event.data.tool_name}")
 
     session.on(handle_event)
 
     # Initial prompt - let Copilot figure out the details
     print("\n📊 Starting analysis...\n")
 
-    session.send(prompt=f"""
-      Fetch the open pull requests for {owner}/{repo_name} from the last week.
-      Calculate the age of each PR in days.
-      Then generate a bar chart image showing the distribution of PR ages
-      (group them into sensible buckets like <1 day, 1-3 days, etc.).
-      Save the chart as "pr-age-chart.png" in the current directory.
-      Finally, summarize the PR health - average age, oldest PR, and how many might be considered stale.
-    """)
-
-    session.wait_for_idle()
+    await session.send_and_wait(
+        {
+            "prompt": f"""
+Fetch the open pull requests for {owner}/{repo_name} from the last week.
+Calculate the age of each PR in days.
+Then generate a bar chart image showing the distribution of PR ages
+(group them into sensible buckets like <1 day, 1-3 days, etc.).
+Save the chart as "pr-age-chart.png" in the current directory.
+Finally, summarize the PR health - average age, oldest PR, and how many might be considered stale.
+"""
+        }
+    )
 
     # Interactive loop
     print("\n💡 Ask follow-up questions or type \"exit\" to quit.\n")
@@ -144,18 +161,22 @@ The current working directory is: {os.getcwd()}
     print()
 
     while True:
-        user_input = input("You: ").strip()
+        try:
+            user_input = input("You: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\n👋 Goodbye!")
+            break
 
         if user_input.lower() in ["exit", "quit"]:
             print("👋 Goodbye!")
             break
 
         if user_input:
-            session.send(prompt=user_input)
-            session.wait_for_idle()
+            await session.send_and_wait({"prompt": user_input})
 
-    session.destroy()
-    client.stop()
+    await session.destroy()
+    await client.stop()
+
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

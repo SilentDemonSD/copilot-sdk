@@ -1,36 +1,58 @@
 #!/usr/bin/env python3
+"""
+Session Persistence - Demonstrates saving and resuming conversation sessions.
+
+This example shows how to create sessions with custom IDs and resume them
+later, allowing conversations to persist across application restarts.
+"""
+
+import asyncio
 
 from copilot import CopilotClient
 
-client = CopilotClient()
-client.start()
 
-# Create session with a memorable ID
-session = client.create_session(
-    session_id="user-123-conversation",
-    model="gpt-5",
-)
+async def main():
+    client = CopilotClient()
+    await client.start()
 
-session.send(prompt="Let's discuss TypeScript generics")
-print(f"Session created: {session.session_id}")
+    # Create session with a memorable ID
+    session = await client.create_session(
+        {
+            "session_id": "user-123-conversation",
+        }
+    )
 
-# Destroy session but keep data on disk
-session.destroy()
-print("Session destroyed (state persisted)")
+    await session.send_and_wait({"prompt": "Let's discuss TypeScript generics"})
+    print(f"Session created: {session.session_id}")
 
-# Resume the previous session
-resumed = client.resume_session("user-123-conversation")
-print(f"Resumed: {resumed.session_id}")
+    # Destroy session but keep data on disk
+    await session.destroy()
+    print("Session destroyed (state persisted)")
 
-resumed.send(prompt="What were we discussing?")
+    # Resume the previous session
+    resumed = await client.resume_session("user-123-conversation")
+    print(f"Resumed: {resumed.session_id}")
 
-# List sessions
-sessions = client.list_sessions()
-print("Sessions:", [s["sessionId"] for s in sessions])
+    await resumed.send_and_wait({"prompt": "What were we discussing?"})
 
-# Delete session permanently
-client.delete_session("user-123-conversation")
-print("Session deleted")
+    # Get session message history
+    messages = await resumed.get_messages()
+    print(f"Session has {len(messages)} messages")
 
-resumed.destroy()
-client.stop()
+    # List all available sessions
+    sessions = await client.list_sessions()
+    print("Available sessions:")
+    for s in sessions:
+        print(f"  - {s['session_id']}: {s.get('summary', 'No summary')}")
+
+    await resumed.destroy()
+
+    # Delete session permanently (removes all data from disk)
+    await client.delete_session("user-123-conversation")
+    print("Session deleted permanently")
+
+    await client.stop()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

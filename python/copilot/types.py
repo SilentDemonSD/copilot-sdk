@@ -281,6 +281,17 @@ class MessageOptions(TypedDict):
 SessionEventHandler = Callable[[SessionEvent], None]
 
 
+# Session metadata returned by list_sessions
+class SessionMetadata(TypedDict):
+    """Metadata about a session returned by list_sessions."""
+
+    session_id: str  # The unique session identifier
+    start_time: str  # ISO 8601 timestamp when session was created
+    modified_time: str  # ISO 8601 timestamp when session was last modified
+    summary: NotRequired[str]  # Optional summary of the session
+    is_remote: bool  # Whether the session is remote
+
+
 # Response from status.get
 class GetStatusResponse(TypedDict):
     """Response from status.get"""

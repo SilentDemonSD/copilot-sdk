@@ -1,31 +1,43 @@
 #!/usr/bin/env python3
+"""
+Managing Local Files - Demonstrates using Copilot to organize files.
 
-from copilot import CopilotClient
+This example shows how to use the Copilot SDK to intelligently organize
+files in a folder based on metadata like file type, creation date, etc.
+"""
+
+import asyncio
 import os
 
-# Create and start client
-client = CopilotClient()
-client.start()
+from copilot import CopilotClient
 
-# Create session
-session = client.create_session(model="gpt-5")
 
-# Event handler
-def handle_event(event):
-    if event["type"] == "assistant.message":
-        print(f"\nCopilot: {event['data']['content']}")
-    elif event["type"] == "tool.execution_start":
-        print(f"  → Running: {event['data']['toolName']}")
-    elif event["type"] == "tool.execution_complete":
-        print(f"  ✓ Completed: {event['data']['toolCallId']}")
+async def main():
+    # Create and start client
+    client = CopilotClient()
+    await client.start()
 
-session.on(handle_event)
+    # Create session
+    session = await client.create_session()
 
-# Ask Copilot to organize files
-# Change this to your target folder
-target_folder = os.path.expanduser("~/Downloads")
+    # Event handler
+    def handle_event(event):
+        if event.type == "assistant.message":
+            print(f"\nCopilot: {event.data.content}")
+        elif event.type == "tool.execution_start":
+            print(f"  → Running: {event.data.tool_name}")
+        elif event.type == "tool.execution_complete":
+            print(f"  ✓ Completed: {event.data.tool_call_id}")
 
-session.send(prompt=f"""
+    session.on(handle_event)
+
+    # Ask Copilot to organize files
+    # Change this to your target folder
+    target_folder = os.path.expanduser("~/Downloads")
+
+    await session.send_and_wait(
+        {
+            "prompt": f"""
 Analyze the files in "{target_folder}" and organize them into subfolders.
 
 1. First, list all files and their metadata
@@ -34,9 +46,13 @@ Analyze the files in "{target_folder}" and organize them into subfolders.
 4. Move each file to its appropriate subfolder
 
 Please confirm before moving any files.
-""")
+"""
+        }
+    )
 
-session.wait_for_idle()
+    await session.destroy()
+    await client.stop()
 
-session.destroy()
-client.stop()
+
+if __name__ == "__main__":
+    asyncio.run(main())

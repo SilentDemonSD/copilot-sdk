@@ -12,6 +12,8 @@ Example:
     ...     await session.send({"prompt": "Hello!"})
 """
 
+from __future__ import annotations
+
 import asyncio
 import inspect
 import os
@@ -33,6 +35,7 @@ from .types import (
     ModelInfo,
     ResumeSessionConfig,
     SessionConfig,
+    SessionMetadata,
     ToolHandler,
     ToolInvocation,
     ToolResult,
@@ -632,6 +635,71 @@ class CopilotClient:
 
         response = await self._client.request("models.list", {})
         return response.get("models", [])
+
+    async def list_sessions(self) -> List[SessionMetadata]:
+        """
+        List all available sessions known to the server.
+
+        Returns metadata about each session including ID, timestamps, and summary.
+
+        Returns:
+            A list of SessionMetadata objects with session details.
+
+        Raises:
+            RuntimeError: If the client is not connected.
+
+        Example:
+            >>> sessions = await client.list_sessions()
+            >>> for session in sessions:
+            ...     print(f"{session['session_id']}: {session.get('summary', 'No summary')}")
+        """
+        if not self._client:
+            raise RuntimeError("Client not connected")
+
+        response = await self._client.request("session.list", {})
+        sessions = response.get("sessions", [])
+
+        # Convert wire format (camelCase) to Python format (snake_case)
+        return [
+            SessionMetadata(
+                session_id=s["sessionId"],
+                start_time=s["startTime"],
+                modified_time=s["modifiedTime"],
+                summary=s.get("summary"),
+                is_remote=s.get("isRemote", False),
+            )
+            for s in sessions
+        ]
+
+    async def delete_session(self, session_id: str) -> None:
+        """
+        Delete a session and its data from disk.
+
+        This permanently removes the session and all its conversation history.
+        The session cannot be resumed after deletion.
+
+        Args:
+            session_id: The ID of the session to delete.
+
+        Raises:
+            RuntimeError: If the client is not connected or deletion fails.
+
+        Example:
+            >>> await client.delete_session("user-123-conversation")
+        """
+        if not self._client:
+            raise RuntimeError("Client not connected")
+
+        response = await self._client.request("session.delete", {"sessionId": session_id})
+
+        success = response.get("success", False)
+        if not success:
+            error = response.get("error", "Unknown error")
+            raise RuntimeError(f"Failed to delete session {session_id}: {error}")
+
+        # Remove from local sessions map if present
+        with self._sessions_lock:
+            self._sessions.pop(session_id, None)
 
     async def _verify_protocol_version(self) -> None:
         """Verify that the server's protocol version matches the SDK's expected version."""

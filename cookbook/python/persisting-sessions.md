@@ -16,68 +16,86 @@ You want users to be able to continue a conversation even after closing and reop
 ### Creating a session with a custom ID
 
 ```python
+import asyncio
 from copilot import CopilotClient
 
-client = CopilotClient()
-client.start()
 
-# Create session with a memorable ID
-session = client.create_session(
-    session_id="user-123-conversation",
-    model="gpt-5",
-)
+async def main():
+    client = CopilotClient()
+    await client.start()
 
-session.send(prompt="Let's discuss TypeScript generics")
+    # Create session with a memorable ID
+    session = await client.create_session({
+        "session_id": "user-123-conversation",
+    })
 
-# Session ID is preserved
-print(session.session_id)  # "user-123-conversation"
+    await session.send_and_wait({"prompt": "Let's discuss TypeScript generics"})
 
-# Destroy session but keep data on disk
-session.destroy()
-client.stop()
+    # Session ID is preserved
+    print(session.session_id)  # "user-123-conversation"
+
+    # Destroy session but keep data on disk
+    await session.destroy()
+    await client.stop()
+
+
+asyncio.run(main())
 ```
 
 ### Resuming a session
 
 ```python
-client = CopilotClient()
-client.start()
+import asyncio
+from copilot import CopilotClient
 
-# Resume the previous session
-session = client.resume_session("user-123-conversation")
 
-# Previous context is restored
-session.send(prompt="What were we discussing?")
+async def main():
+    client = CopilotClient()
+    await client.start()
 
-session.destroy()
-client.stop()
+    # Resume the previous session
+    session = await client.resume_session("user-123-conversation")
+
+    # Previous context is restored
+    await session.send_and_wait({"prompt": "What were we discussing?"})
+
+    await session.destroy()
+    await client.stop()
+
+
+asyncio.run(main())
 ```
 
 ### Listing available sessions
 
 ```python
-sessions = client.list_sessions()
+# List all sessions on disk
+sessions = await client.list_sessions()
 for s in sessions:
-    print("Session:", s["sessionId"])
+    print(f"Session: {s['session_id']}")
+    print(f"  Created: {s['start_time']}")
+    print(f"  Modified: {s['modified_time']}")
+    if s.get('summary'):
+        print(f"  Summary: {s['summary']}")
 ```
 
 ### Deleting a session permanently
 
 ```python
 # Remove session and all its data from disk
-client.delete_session("user-123-conversation")
+await client.delete_session("user-123-conversation")
 ```
 
 ### Getting session history
 
 ```python
-messages = session.get_messages()
+messages = await session.get_messages()
 for msg in messages:
-    print(f"[{msg['type']}] {msg['data']}")
+    print(f"[{msg.type}] {msg.data}")
 ```
 
 ## Best practices
 
 1. **Use meaningful session IDs**: Include user ID or context in the session ID
-2. **Handle missing sessions**: Check if a session exists before resuming
-3. **Clean up old sessions**: Periodically delete sessions that are no longer needed
+2. **Handle missing sessions**: Use `list_sessions()` to check if a session exists before resuming
+3. **Clean up old sessions**: Use `delete_session()` to periodically remove sessions that are no longer needed

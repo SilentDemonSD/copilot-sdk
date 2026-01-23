@@ -1,35 +1,51 @@
 #!/usr/bin/env python3
+"""
+Multiple Sessions - Demonstrates managing multiple independent conversations.
+
+This example shows how to create and manage multiple conversation sessions
+simultaneously, each with its own context and history.
+"""
+
+import asyncio
 
 from copilot import CopilotClient
 
-client = CopilotClient()
-client.start()
 
-# Create multiple independent sessions
-session1 = client.create_session(model="gpt-5")
-session2 = client.create_session(model="gpt-5")
-session3 = client.create_session(model="claude-sonnet-4.5")
+async def main():
+    client = CopilotClient()
+    await client.start()
 
-print("Created 3 independent sessions")
+    # Create multiple independent sessions
+    session1 = await client.create_session()
+    session2 = await client.create_session()
+    session3 = await client.create_session({"model": "claude-sonnet-4"})
 
-# Each session maintains its own conversation history
-session1.send(prompt="You are helping with a Python project")
-session2.send(prompt="You are helping with a TypeScript project")
-session3.send(prompt="You are helping with a Go project")
+    print("Created 3 independent sessions")
 
-print("Sent initial context to all sessions")
+    # Each session maintains its own conversation history
+    # Send initial context to each session
+    await session1.send({"prompt": "You are helping with a Python project"})
+    await session2.send({"prompt": "You are helping with a TypeScript project"})
+    await session3.send({"prompt": "You are helping with a Go project"})
 
-# Follow-up messages stay in their respective contexts
-session1.send(prompt="How do I create a virtual environment?")
-session2.send(prompt="How do I set up tsconfig?")
-session3.send(prompt="How do I initialize a module?")
+    print("Sent initial context to all sessions")
 
-print("Sent follow-up questions to each session")
+    # Follow-up messages stay in their respective contexts
+    # Use send_and_wait to ensure each response completes
+    await session1.send_and_wait({"prompt": "How do I create a virtual environment?"})
+    await session2.send_and_wait({"prompt": "How do I set up tsconfig?"})
+    await session3.send_and_wait({"prompt": "How do I initialize a module?"})
 
-# Clean up all sessions
-session1.destroy()
-session2.destroy()
-session3.destroy()
-client.stop()
+    print("Sent follow-up questions to each session")
 
-print("All sessions destroyed successfully")
+    # Clean up all sessions
+    await session1.destroy()
+    await session2.destroy()
+    await session3.destroy()
+    await client.stop()
+
+    print("All sessions destroyed successfully")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

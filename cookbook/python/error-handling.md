@@ -16,41 +16,46 @@ You need to handle various error conditions like connection failures, timeouts, 
 ## Basic try-except
 
 ```python
+import asyncio
 from copilot import CopilotClient
 
-client = CopilotClient()
 
-try:
-    client.start()
-    session = client.create_session(model="gpt-5")
-
+async def main():
+    client = CopilotClient()
     response = None
+
     def handle_message(event):
         nonlocal response
-        if event["type"] == "assistant.message":
-            response = event["data"]["content"]
+        if event.type == "assistant.message":
+            response = event.data.content
 
-    session.on(handle_message)
-    session.send(prompt="Hello!")
-    session.wait_for_idle()
+    try:
+        await client.start()
+        session = await client.create_session()
+        session.on(handle_message)
 
-    if response:
-        print(response)
+        await session.send_and_wait({"prompt": "Hello!"})
 
-    session.destroy()
-except Exception as e:
-    print(f"Error: {e}")
-finally:
-    client.stop()
+        if response:
+            print(response)
+
+        await session.destroy()
+
+    except Exception as e:
+        print(f"Error: {e}")
+
+    finally:
+        await client.stop()
+
+
+asyncio.run(main())
 ```
 
 ## Handling specific error types
 
 ```python
-import subprocess
-
 try:
-    client.start()
+    await client.start()
 except FileNotFoundError:
     print("Copilot CLI not found. Please install it first.")
 except ConnectionError:
@@ -61,90 +66,67 @@ except Exception as e:
 
 ## Timeout handling
 
+The SDK's `send_and_wait()` method accepts a timeout parameter:
+
 ```python
-import signal
-from contextlib import contextmanager
+import asyncio
 
-@contextmanager
-def timeout(seconds):
-    def timeout_handler(signum, frame):
-        raise TimeoutError("Request timed out")
-
-    old_handler = signal.signal(signal.SIGALRM, timeout_handler)
-    signal.alarm(seconds)
-    try:
-        yield
-    finally:
-        signal.alarm(0)
-        signal.signal(signal.SIGALRM, old_handler)
-
-session = client.create_session(model="gpt-5")
+session = await client.create_session()
 
 try:
-    session.send(prompt="Complex question...")
-
     # Wait with timeout (30 seconds)
-    with timeout(30):
-        session.wait_for_idle()
-
+    await session.send_and_wait({"prompt": "Complex question..."}, timeout=30.0)
     print("Response received")
-except TimeoutError:
+except asyncio.TimeoutError:
     print("Request timed out")
 ```
 
 ## Aborting a request
 
 ```python
-import threading
+import asyncio
 
-session = client.create_session(model="gpt-5")
+session = await client.create_session()
 
-# Start a request
-session.send(prompt="Write a very long story...")
 
-# Abort it after some condition
-def abort_later():
-    import time
-    time.sleep(5)
-    session.abort()
+async def abort_after_delay():
+    await asyncio.sleep(5)
+    await session.abort()
     print("Request aborted")
 
-threading.Thread(target=abort_later).start()
+
+# Start the abort task
+abort_task = asyncio.create_task(abort_after_delay())
+
+# Send a long request
+await session.send({"prompt": "Write a very long story..."})
 ```
 
 ## Graceful shutdown
 
 ```python
+import asyncio
 import signal
-import sys
 
-def signal_handler(sig, frame):
+client = CopilotClient()
+
+
+async def shutdown():
     print("\nShutting down...")
-    errors = client.stop()
+    errors = await client.stop()
     if errors:
         print(f"Cleanup errors: {errors}")
-    sys.exit(0)
 
-signal.signal(signal.SIGINT, signal_handler)
-```
 
-## Context manager for automatic cleanup
-
-```python
-from copilot import CopilotClient
-
-with CopilotClient() as client:
-    client.start()
-    session = client.create_session(model="gpt-5")
-
-    # ... do work ...
-
-    # client.stop() is automatically called when exiting context
+# Handle Ctrl+C gracefully
+loop = asyncio.get_event_loop()
+loop.add_signal_handler(signal.SIGINT, lambda: asyncio.create_task(shutdown()))
 ```
 
 ## Best practices
 
-1. **Always clean up**: Use try-finally or context managers to ensure `stop()` is called
+1. **Always clean up**: Use try-finally to ensure `await client.stop()` is called
 2. **Handle connection errors**: The CLI might not be installed or running
-3. **Set appropriate timeouts**: Long-running requests should have timeouts
+3. **Use timeouts**: Pass timeout to `send_and_wait()` for long-running requests
 4. **Log errors**: Capture error details for debugging
+5. **Use async patterns**: The SDK is fully async - use `asyncio.run()` as entry point
