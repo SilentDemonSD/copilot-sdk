@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 
 from copilot import CopilotClient
 from copilot.tools import define_tool
-from copilot.types import Tool, ToolInvocation, ToolResult
+from copilot.types import SessionEventType, ToolResult
 
 
 # =============================================================================
@@ -279,11 +279,11 @@ async def demo_basic_tools():
         session = await client.create_session({"tools": tools})
 
         def handler(event):
-            if event.type == "assistant.message":
+            if event.type == SessionEventType.ASSISTANT_MESSAGE:
                 print(f"\n🤖 {event.data.content}")
-            elif event.type == "tool.execution_start":
+            elif event.type == SessionEventType.TOOL_EXECUTION_START:
                 print(f"  ⚙️  Executing: {event.data.tool_name}")
-            elif event.type == "tool.execution_complete":
+            elif event.type == SessionEventType.TOOL_EXECUTION_COMPLETE:
                 print(f"  ✓ Completed")
 
         session.on(handler)
@@ -328,9 +328,9 @@ async def demo_advanced_tools():
         session = await client.create_session({"tools": tools})
 
         def handler(event):
-            if event.type == "assistant.message":
+            if event.type == SessionEventType.ASSISTANT_MESSAGE:
                 print(f"\n🤖 {event.data.content}")
-            elif event.type == "tool.execution_start":
+            elif event.type == SessionEventType.TOOL_EXECUTION_START:
                 print(f"  ⚙️  Executing: {event.data.tool_name}")
 
         session.on(handler)
@@ -377,11 +377,11 @@ async def demo_tool_orchestration():
         session = await client.create_session({"tools": tools})
 
         def handler(event):
-            if event.type == "assistant.message":
+            if event.type == SessionEventType.ASSISTANT_MESSAGE:
                 print(f"\n🤖 {event.data.content}")
-            elif event.type == "tool.execution_start":
+            elif event.type == SessionEventType.TOOL_EXECUTION_START:
                 print(f"  ⚙️  {event.data.tool_name}")
-            elif event.type == "tool.execution_complete":
+            elif event.type == SessionEventType.TOOL_EXECUTION_COMPLETE:
                 print(f"  ✓ Done")
 
         session.on(handler)

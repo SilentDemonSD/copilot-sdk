@@ -7,7 +7,9 @@ Run: python streaming_responses.py
 
 import asyncio
 import sys
+
 from copilot import CopilotClient
+from copilot.types import SessionEventType
 
 
 # =============================================================================
@@ -29,11 +31,11 @@ async def basic_streaming():
         print("Response: ", end="", flush=True)
 
         def handler(event):
-            if event.type == "assistant.message_delta":
+            if event.type == SessionEventType.ASSISTANT_MESSAGE_DELTA:
                 delta = getattr(event.data, "delta_content", "")
                 if delta:
                     print(delta, end="", flush=True)
-            elif event.type == "session.idle":
+            elif event.type == SessionEventType.SESSION_IDLE:
                 print("\n")
 
         session.on(handler)
@@ -67,7 +69,7 @@ async def streaming_with_progress():
         state = {"thinking": False, "tools": 0, "chars": 0}
 
         def handler(event):
-            if event.type == "assistant.reasoning_delta":
+            if event.type == SessionEventType.ASSISTANT_REASONING_DELTA:
                 if not state["thinking"]:
                     print("\n💭 Thinking: ", end="", flush=True)
                     state["thinking"] = True
@@ -75,7 +77,7 @@ async def streaming_with_progress():
                 if delta:
                     print(delta, end="", flush=True)
 
-            elif event.type == "assistant.message_delta":
+            elif event.type == SessionEventType.ASSISTANT_MESSAGE_DELTA:
                 if state["thinking"]:
                     print("\n\n📝 Response: ", end="", flush=True)
                     state["thinking"] = False
@@ -84,14 +86,14 @@ async def streaming_with_progress():
                     print(delta, end="", flush=True)
                     state["chars"] += len(delta)
 
-            elif event.type == "tool.execution_start":
+            elif event.type == SessionEventType.TOOL_EXECUTION_START:
                 state["tools"] += 1
                 print(f"\n  🔧 [{state['tools']}] {event.data.tool_name}...", end="")
 
-            elif event.type == "tool.execution_complete":
+            elif event.type == SessionEventType.TOOL_EXECUTION_COMPLETE:
                 print(" ✓")
 
-            elif event.type == "session.idle":
+            elif event.type == SessionEventType.SESSION_IDLE:
                 print(f"\n\n📊 {state['chars']} chars, {state['tools']} tools")
 
         session.on(handler)
@@ -130,7 +132,7 @@ async def interactive_chat():
         def handler(event):
             nonlocal response_started
 
-            if event.type == "assistant.message_delta":
+            if event.type == SessionEventType.ASSISTANT_MESSAGE_DELTA:
                 if not response_started:
                     print("\n🤖 ", end="", flush=True)
                     response_started = True
@@ -138,10 +140,10 @@ async def interactive_chat():
                 if delta:
                     print(delta, end="", flush=True)
 
-            elif event.type == "tool.execution_start":
+            elif event.type == SessionEventType.TOOL_EXECUTION_START:
                 print(f"\n   ⚙️ {event.data.tool_name}", end="")
 
-            elif event.type == "session.idle":
+            elif event.type == SessionEventType.SESSION_IDLE:
                 if response_started:
                     print("\n")
                 response_started = False
@@ -188,11 +190,11 @@ async def typewriter_effect():
         complete = asyncio.Event()
 
         def handler(event):
-            if event.type == "assistant.message_delta":
+            if event.type == SessionEventType.ASSISTANT_MESSAGE_DELTA:
                 delta = getattr(event.data, "delta_content", "")
                 if delta:
                     buffer.append(delta)
-            elif event.type == "session.idle":
+            elif event.type == SessionEventType.SESSION_IDLE:
                 complete.set()
 
         session.on(handler)

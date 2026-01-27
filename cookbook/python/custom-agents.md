@@ -13,30 +13,14 @@ Create specialized AI agents with custom prompts and capabilities.
 
 ## Overview
 
-This recipe covers custom agent development:
+> **📖 What are Custom Agents?** For an introduction to agent concepts, configuration options, and multi-language examples, see [Custom Agents Documentation](../../docs/custom-agents.md).
+
+This recipe covers Python-specific agent patterns:
 
 - Creating agents with specialized prompts
 - Agent-specific tools and capabilities
 - Multiple agents for different tasks
 - Dynamic agent creation
-- Agent collaboration patterns
-
-## What is an Agent?
-
-An agent is a session configured with:
-- **Custom system prompt**: Specialized behavior and expertise
-- **Specific tools**: Limited or extended capabilities
-- **Focused context**: Domain-specific knowledge
-
-```
-┌─────────────────────────────────────────────┐
-│                Custom Agent                 │
-├─────────────────────────────────────────────┤
-│  System Prompt: "You are a code reviewer"   │
-│  Tools: [analyze_code, check_style]         │
-│  Provider: gpt-4o                           │
-└─────────────────────────────────────────────┘
-```
 
 ## Quick Start
 
@@ -299,19 +283,21 @@ async def agent_collaboration_demo(session):
 
 ## Agent Event Handling
 
-Track agent interactions:
+Track agent interactions using `SessionEventType`:
 
 ```python
+from copilot.types import SessionEventType
+
 def create_agent_handler():
     """Track which agents are responding."""
     def handler(event):
-        if event.type == "agent.selected":
+        if event.type == SessionEventType.SUBAGENT_SELECTED:
             print(f"🤖 Agent: {event.data.agent_name}")
 
-        elif event.type == "assistant.message":
+        elif event.type == SessionEventType.ASSISTANT_MESSAGE:
             print(f"📝 Response: {event.data.content[:100]}...")
 
-        elif event.type == "tool.execution_start":
+        elif event.type == SessionEventType.TOOL_EXECUTION_START:
             print(f"🔧 Tool: {event.data.tool_name}")
 
     return handler

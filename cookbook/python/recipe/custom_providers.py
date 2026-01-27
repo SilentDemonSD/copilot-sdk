@@ -8,6 +8,7 @@ import asyncio
 import os
 
 from copilot import CopilotClient, ProviderConfig
+from copilot.types import SessionEventType
 
 
 # =============================================================================
@@ -108,7 +109,7 @@ async def demo_with_provider(provider_name, provider_config):
 
         def handler(event):
             nonlocal response
-            if event.type == "assistant.message":
+            if event.type == SessionEventType.ASSISTANT_MESSAGE:
                 response = event.data.content
 
         session.on(handler)
@@ -195,7 +196,7 @@ async def demo_provider_switching():
 
             def handler(event):
                 nonlocal response
-                if event.type == "assistant.message":
+                if event.type == SessionEventType.ASSISTANT_MESSAGE:
                     response = event.data.content
 
             session.on(handler)
@@ -245,7 +246,7 @@ async def demo_fallback_pattern():
 
                 def handler(event):
                     nonlocal response
-                    if event.type == "assistant.message":
+                    if event.type == SessionEventType.ASSISTANT_MESSAGE:
                         response = event.data.content
 
                 session.on(handler)

@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 from copilot import CopilotClient
-from copilot.types import PermissionRequest, PermissionRequestResult
+from copilot.types import SessionEventType
 
 
 # =============================================================================
@@ -22,17 +22,17 @@ def create_event_handler(verbose=True):
     """Create an event handler for progress display."""
 
     def handle_event(event):
-        if event.type == "assistant.message":
+        if event.type == SessionEventType.ASSISTANT_MESSAGE:
             print(f"\n🤖 Copilot:\n{event.data.content}\n")
-        elif event.type == "assistant.message_delta" and verbose:
+        elif event.type == SessionEventType.ASSISTANT_MESSAGE_DELTA and verbose:
             delta = getattr(event.data, "delta_content", "")
             if delta:
                 print(delta, end="", flush=True)
-        elif event.type == "tool.execution_start":
+        elif event.type == SessionEventType.TOOL_EXECUTION_START:
             print(f"  ⚙️  Starting: {event.data.tool_name}")
-        elif event.type == "tool.execution_complete":
+        elif event.type == SessionEventType.TOOL_EXECUTION_COMPLETE:
             print(f"  ✓ Completed")
-        elif event.type == "session.error":
+        elif event.type == SessionEventType.SESSION_ERROR:
             message = getattr(event.data, "message", str(event.data))
             print(f"  ✗ Error: {message}")
 
@@ -205,7 +205,7 @@ async def quick_start():
         session = await client.create_session()
 
         def handle_event(event):
-            if event.type == "assistant.message":
+            if event.type == SessionEventType.ASSISTANT_MESSAGE:
                 print(f"\n{event.data.content}\n")
 
         session.on(handle_event)

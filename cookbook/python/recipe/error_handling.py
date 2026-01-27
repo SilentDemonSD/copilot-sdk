@@ -8,7 +8,9 @@ Run: python error_handling.py
 import asyncio
 import signal
 import sys
+
 from copilot import CopilotClient
+from copilot.types import SessionEventType
 
 
 # =============================================================================
@@ -26,7 +28,7 @@ async def basic_error_handling():
 
     def handle_event(event):
         nonlocal response
-        if event.type == "assistant.message":
+        if event.type == SessionEventType.ASSISTANT_MESSAGE:
             response = event.data.content
 
     try:

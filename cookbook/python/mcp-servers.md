@@ -13,26 +13,14 @@ Configure and use Model Context Protocol (MCP) servers for extended capabilities
 
 ## Overview
 
-This recipe covers MCP server integration:
+> **📖 What is MCP?** For an introduction to MCP concepts, server types, and configuration options, see [MCP Documentation](../../docs/mcp.md).
 
-- Understanding MCP architecture
+This recipe covers Python-specific MCP patterns:
+
 - GitHub MCP server configuration
 - Filesystem MCP server setup
 - Custom MCP servers
 - Tool filtering and configuration
-
-## What is MCP?
-
-Model Context Protocol (MCP) is a standard for extending AI capabilities with external tools:
-
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   Copilot SDK   │────▶│   MCP Server    │────▶│  External API   │
-│   (Your App)    │◀────│   (Bridge)      │◀────│  (GitHub, etc)  │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-```
-
-MCP servers expose tools that Copilot can call automatically.
 
 ## Quick Start
 
@@ -252,21 +240,23 @@ docker_mcp = MCPServerConfig(
 Monitor MCP tool usage:
 
 ```python
+from copilot.types import SessionEventType
+
 def create_mcp_handler():
     """Track MCP tool execution."""
     def handler(event):
-        if event.type == "tool.execution_start":
+        if event.type == SessionEventType.TOOL_EXECUTION_START:
             tool_name = event.data.tool_name
             if tool_name.startswith("github."):
                 print(f"🐙 GitHub: {tool_name}")
             elif tool_name.startswith("filesystem."):
                 print(f"📁 Filesystem: {tool_name}")
 
-        elif event.type == "tool.execution_complete":
-            print(f"✅ Completed: {event.data.tool_call_id}")
+        elif event.type == SessionEventType.TOOL_EXECUTION_COMPLETE:
+            print(f"✅ Completed")
 
-        elif event.type == "tool.execution_error":
-            print(f"❌ Error: {event.data.error}")
+        elif event.type == SessionEventType.SESSION_ERROR:
+            print(f"❌ Error: {event.data.message}")
 
     return handler
 

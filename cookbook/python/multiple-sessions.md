@@ -78,6 +78,8 @@ Execute requests across multiple sessions concurrently:
 
 ```python
 import asyncio
+from copilot import CopilotClient
+from copilot.types import SessionEventType
 
 async def parallel_requests():
     client = CopilotClient()
@@ -92,7 +94,7 @@ async def parallel_requests():
 
     def make_handler(topic, results_dict):
         def handler(event):
-            if event.type == "assistant.message":
+            if event.type == SessionEventType.ASSISTANT_MESSAGE:
                 results_dict[topic] = event.data.content
         return handler
 

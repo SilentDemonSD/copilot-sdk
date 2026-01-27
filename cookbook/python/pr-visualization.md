@@ -36,6 +36,7 @@ pip install copilot-sdk
 ```python
 import asyncio
 from copilot import CopilotClient
+from copilot.types import SessionEventType
 
 async def main():
     client = CopilotClient()
@@ -48,7 +49,7 @@ async def main():
     })
 
     def handle_event(event):
-        if event.type == "assistant.message":
+        if event.type == SessionEventType.ASSISTANT_MESSAGE:
             print(f"🤖 {event.data.content}")
 
     session.on(handle_event)
@@ -186,13 +187,13 @@ Track analysis progress:
 def create_event_handler():
     """Create event handler for analysis visibility."""
     def handler(event):
-        if event.type == "assistant.message":
+        if event.type == SessionEventType.ASSISTANT_MESSAGE:
             print(f"\n🤖 {event.data.content}")
-        elif event.type == "tool.execution_start":
+        elif event.type == SessionEventType.TOOL_EXECUTION_START:
             print(f"  ⚙️  Running: {event.data.tool_name}")
-        elif event.type == "tool.execution_complete":
-            print(f"  ✓ Completed: {event.data.tool_call_id}")
-        elif event.type == "error":
+        elif event.type == SessionEventType.TOOL_EXECUTION_COMPLETE:
+            print(f"  ✓ Completed")
+        elif event.type == SessionEventType.SESSION_ERROR:
             print(f"  ❌ Error: {event.data.message}")
 
     return handler

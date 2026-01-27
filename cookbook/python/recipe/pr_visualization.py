@@ -11,6 +11,7 @@ import subprocess
 import sys
 
 from copilot import CopilotClient
+from copilot.types import SessionEventType
 
 
 # =============================================================================
@@ -37,9 +38,9 @@ def get_github_remote():
         remote_url = result.stdout.strip()
 
         if match := re.search(r"git@github\.com:(.+/.+?)(?:\.git)?$", remote_url):
-            return match.group(1)
+            return match[1]
         if match := re.search(r"https://github\.com/(.+/.+?)(?:\.git)?$", remote_url):
-            return match.group(1)
+            return match[1]
         return None
     except (subprocess.CalledProcessError, FileNotFoundError):
         return None
@@ -106,17 +107,17 @@ def create_event_handler(verbose=True):
     """Create an event handler for displaying progress."""
 
     def handle_event(event):
-        if event.type == "assistant.message":
+        if event.type == SessionEventType.ASSISTANT_MESSAGE:
             print(f"\n🤖 {event.data.content}\n")
-        elif event.type == "assistant.message_delta" and verbose:
+        elif event.type == SessionEventType.ASSISTANT_MESSAGE_DELTA and verbose:
             delta = getattr(event.data, "delta_content", "")
             if delta:
                 print(delta, end="", flush=True)
-        elif event.type == "tool.execution_start":
+        elif event.type == SessionEventType.TOOL_EXECUTION_START:
             print(f"  ⚙️  {event.data.tool_name}")
-        elif event.type == "tool.execution_complete":
-            print(f"  ✓ Done")
-        elif event.type == "session.error":
+        elif event.type == SessionEventType.TOOL_EXECUTION_COMPLETE:
+            print("  ✓ Done")
+        elif event.type == SessionEventType.SESSION_ERROR:
             message = getattr(event.data, "message", str(event.data))
             print(f"  ✗ Error: {message}")
 

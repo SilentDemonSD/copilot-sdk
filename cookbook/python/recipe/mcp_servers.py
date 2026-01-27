@@ -8,7 +8,7 @@ import asyncio
 import os
 
 from copilot import CopilotClient
-from copilot.types import MCPLocalServerConfig, MCPRemoteServerConfig
+from copilot.types import MCPLocalServerConfig, MCPRemoteServerConfig, SessionEventType
 
 
 # =============================================================================
@@ -80,15 +80,15 @@ def create_mcp_event_handler(verbose=True):
     """Create an event handler that highlights MCP tool usage."""
 
     def handler(event):
-        if event.type == "assistant.message":
+        if event.type == SessionEventType.ASSISTANT_MESSAGE:
             print(f"\n🤖 {event.data.content}\n")
-        elif event.type == "tool.execution_start":
+        elif event.type == SessionEventType.TOOL_EXECUTION_START:
             tool_name = event.data.tool_name
             prefix = "🔌 MCP Tool:" if tool_name.startswith("mcp_") else "⚙️  Tool:"
             print(f"  {prefix} {tool_name}")
-        elif event.type == "tool.execution_complete":
+        elif event.type == SessionEventType.TOOL_EXECUTION_COMPLETE:
             print("  ✓ Done")
-        elif event.type == "session.error":
+        elif event.type == SessionEventType.SESSION_ERROR:
             message = getattr(event.data, "message", str(event.data))
             print(f"  ❌ Error: {message}")
 

@@ -8,6 +8,7 @@ import asyncio
 from datetime import datetime
 
 from copilot import CopilotClient
+from copilot.types import SessionEventType
 
 
 # =============================================================================
@@ -35,7 +36,7 @@ async def basic_persistence():
 
         def handler(event):
             nonlocal response_content
-            if event.type == "assistant.message":
+            if event.type == SessionEventType.ASSISTANT_MESSAGE:
                 response_content = event.data.content
 
         session.on(handler)

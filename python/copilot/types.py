@@ -12,6 +12,7 @@ from typing_extensions import NotRequired
 
 # Import generated SessionEvent types
 from .generated.session_events import SessionEvent
+from .generated.session_events import SessionEventType as SessionEventType
 
 # SessionEvent is now imported from generated types
 # It provides proper type discrimination for all event types

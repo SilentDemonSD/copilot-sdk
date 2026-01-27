@@ -26,6 +26,7 @@ This recipe covers streaming patterns:
 ```python
 import asyncio
 from copilot import CopilotClient
+from copilot.types import SessionEventType
 
 async def main():
     client = CopilotClient()
@@ -35,10 +36,10 @@ async def main():
 
     # Stream handler for real-time output
     def on_stream(event):
-        if event.type == "assistant.message.delta":
+        if event.type == SessionEventType.ASSISTANT_MESSAGE_DELTA:
             # Print each chunk as it arrives
-            print(event.data.content, end="", flush=True)
-        elif event.type == "assistant.message":
+            print(event.data.delta_content, end="", flush=True)
+        elif event.type == SessionEventType.ASSISTANT_MESSAGE:
             print()  # Newline after complete message
 
     session.on(on_stream)
@@ -57,13 +58,13 @@ asyncio.run(main())
 
 ## Streaming Events
 
-| Event Type | Description | Data |
-|------------|-------------|------|
-| `assistant.message.delta` | Partial content chunk | `content` (string) |
-| `assistant.message` | Complete message | Full `content` |
-| `tool.execution_start` | Tool starting | `tool_name`, `arguments` |
-| `tool.execution_complete` | Tool finished | `result` |
-| `turn.complete` | Full turn done | Turn metadata |
+| Event Type | SessionEventType | Description |
+|------------|------------------|-------------|
+| `assistant.message_delta` | `ASSISTANT_MESSAGE_DELTA` | Partial content chunk |
+| `assistant.message` | `ASSISTANT_MESSAGE` | Complete message |
+| `tool.execution_start` | `TOOL_EXECUTION_START` | Tool starting |
+| `tool.execution_complete` | `TOOL_EXECUTION_COMPLETE` | Tool finished |
+| `session.idle` | `SESSION_IDLE` | Session idle |
 
 ## Basic Streaming
 
@@ -76,15 +77,16 @@ async def stream_response(session, prompt):
     complete = asyncio.Event()
 
     def handler(event):
-        if event.type == "assistant.message.delta":
-            chunks.append(event.data.content)
-            print(event.data.content, end="", flush=True)
+        if event.type == SessionEventType.ASSISTANT_MESSAGE_DELTA:
+            delta = getattr(event.data, "delta_content", "")
+            chunks.append(delta)
+            print(delta, end="", flush=True)
 
-        elif event.type == "assistant.message":
+        elif event.type == SessionEventType.ASSISTANT_MESSAGE:
             print()  # Newline
             complete.set()
 
-        elif event.type == "error":
+        elif event.type == SessionEventType.SESSION_ERROR:
             print(f"\nError: {event.data.message}")
             complete.set()
 
@@ -110,17 +112,17 @@ async def stream_with_progress(session, prompt):
     def handler(event):
         nonlocal chunk_count
 
-        if event.type == "assistant.message.delta":
+        if event.type == SessionEventType.ASSISTANT_MESSAGE_DELTA:
             chunk_count += 1
             # Show spinner
             sys.stdout.write(f"\r{spinner[chunk_count % len(spinner)]} Generating...")
             sys.stdout.flush()
 
-        elif event.type == "assistant.message":
+        elif event.type == SessionEventType.ASSISTANT_MESSAGE:
             sys.stdout.write(f"\r✅ Complete ({chunk_count} chunks)\n\n")
             print(event.data.content)
 
-        elif event.type == "tool.execution_start":
+        elif event.type == SessionEventType.TOOL_EXECUTION_START:
             print(f"\n🔧 Running {event.data.tool_name}...")
 
     session.on(handler)
@@ -147,10 +149,11 @@ async def typewriter_effect(session, prompt, delay=0.02):
     def handler(event):
         nonlocal display_task
 
-        if event.type == "assistant.message.delta":
-            buffer.append(event.data.content)
+        if event.type == SessionEventType.ASSISTANT_MESSAGE_DELTA:
+            delta = getattr(event.data, "delta_content", "")
+            buffer.append(delta)
 
-        elif event.type == "assistant.message":
+        elif event.type == SessionEventType.ASSISTANT_MESSAGE:
             complete.set()
 
     session.on(handler)
@@ -188,9 +191,10 @@ async def parallel_streaming():
 
         def make_handler(t):
             def handler(event):
-                if event.type == "assistant.message.delta":
-                    results[t].append(event.data.content)
-                elif event.type == "assistant.message":
+                if event.type == SessionEventType.ASSISTANT_MESSAGE_DELTA:
+                    delta = getattr(event.data, "delta_content", "")
+                    results[t].append(delta)
+                elif event.type == SessionEventType.ASSISTANT_MESSAGE:
                     events[t].set()
             return handler
 
@@ -228,13 +232,14 @@ class StreamAggregator:
         self.tool_calls = []
 
     def handler(self, event):
-        if event.type == "assistant.message.delta":
-            self.chunks.append(event.data.content)
+        if event.type == SessionEventType.ASSISTANT_MESSAGE_DELTA:
+            delta = getattr(event.data, "delta_content", "")
+            self.chunks.append(delta)
 
-        elif event.type == "assistant.message":
+        elif event.type == SessionEventType.ASSISTANT_MESSAGE:
             self.complete.set()
 
-        elif event.type == "tool.execution_complete":
+        elif event.type == SessionEventType.TOOL_EXECUTION_COMPLETE:
             self.tool_calls.append({
                 "id": event.data.tool_call_id,
                 "result": event.data.result
@@ -272,8 +277,9 @@ async def rich_streaming(session, prompt):
     content = []
 
     def handler(event):
-        if event.type == "assistant.message.delta":
-            content.append(event.data.content)
+        if event.type == SessionEventType.ASSISTANT_MESSAGE_DELTA:
+            delta = getattr(event.data, "delta_content", "")
+            content.append(delta)
 
     session.on(handler)
 
@@ -303,7 +309,7 @@ async def stream_with_timeout(session, prompt, timeout=30.0):
         nonlocal last_chunk_time
         last_chunk_time = asyncio.get_event_loop().time()
 
-        if event.type == "assistant.message":
+        if event.type == SessionEventType.ASSISTANT_MESSAGE:
             complete.set()
 
     session.on(handler)

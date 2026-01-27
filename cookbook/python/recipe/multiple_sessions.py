@@ -6,7 +6,9 @@ Run: python multiple_sessions.py
 """
 
 import asyncio
+
 from copilot import CopilotClient
+from copilot.types import SessionEventType
 
 
 # =============================================================================
@@ -44,7 +46,7 @@ async def basic_multiple_sessions():
 
         def make_handler(name):
             def handler(event):
-                if event.type == "assistant.message":
+                if event.type == SessionEventType.ASSISTANT_MESSAGE:
                     responses[name] = event.data.content[:80] + "..."
             return handler
 
@@ -88,7 +90,7 @@ async def parallel_execution():
 
         def make_handler(topic):
             def handler(event):
-                if event.type == "assistant.message":
+                if event.type == SessionEventType.ASSISTANT_MESSAGE:
                     results[topic] = event.data.content
             return handler
 

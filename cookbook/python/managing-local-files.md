@@ -26,6 +26,7 @@ This recipe demonstrates AI-powered file organization:
 import asyncio
 import os
 from copilot import CopilotClient
+from copilot.types import SessionEventType
 
 async def main():
     client = CopilotClient()
@@ -35,12 +36,12 @@ async def main():
 
     # Event handler for visibility
     def handle_event(event):
-        if event.type == "assistant.message":
+        if event.type == SessionEventType.ASSISTANT_MESSAGE:
             print(f"\nCopilot: {event.data.content}")
-        elif event.type == "tool.execution_start":
+        elif event.type == SessionEventType.TOOL_EXECUTION_START:
             print(f"  → Running: {event.data.tool_name}")
-        elif event.type == "tool.execution_complete":
-            print(f"  ✓ Completed: {event.data.tool_call_id}")
+        elif event.type == SessionEventType.TOOL_EXECUTION_COMPLETE:
+            print(f"  ✓ Completed")
 
     session.on(handle_event)
 

@@ -249,18 +249,20 @@ async def http_request(
 Monitor tool execution:
 
 ```python
+from copilot.types import SessionEventType
+
 def create_tool_handler():
     """Track tool execution events."""
     def handler(event):
-        if event.type == "tool.execution_start":
+        if event.type == SessionEventType.TOOL_EXECUTION_START:
             print(f"🔧 Starting: {event.data.tool_name}")
             print(f"   Args: {event.data.arguments}")
 
-        elif event.type == "tool.execution_complete":
-            print(f"✅ Completed: {event.data.tool_call_id}")
+        elif event.type == SessionEventType.TOOL_EXECUTION_COMPLETE:
+            print(f"✅ Completed")
 
-        elif event.type == "tool.execution_error":
-            print(f"❌ Error in {event.data.tool_name}: {event.data.error}")
+        elif event.type == SessionEventType.SESSION_ERROR:
+            print(f"❌ Error: {event.data.message}")
 
     return handler
 

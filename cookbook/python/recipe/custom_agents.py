@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from copilot import CopilotClient
 from copilot.tools import define_tool
-from copilot.types import CustomAgentConfig
+from copilot.types import CustomAgentConfig, SessionEventType
 
 
 # =============================================================================
@@ -204,11 +204,11 @@ def create_event_handler():
     """Create an event handler for agent demonstrations."""
 
     def handler(event):
-        if event.type == "assistant.message":
+        if event.type == SessionEventType.ASSISTANT_MESSAGE:
             print(f"\n🤖 {event.data.content}\n")
-        elif event.type == "tool.execution_start":
+        elif event.type == SessionEventType.TOOL_EXECUTION_START:
             print(f"  ⚙️ {event.data.tool_name}")
-        elif event.type == "session.error":
+        elif event.type == SessionEventType.SESSION_ERROR:
             message = getattr(event.data, "message", str(event.data))
             print(f"  ❌ Error: {message}")
 
