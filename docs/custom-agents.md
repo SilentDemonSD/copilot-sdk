@@ -328,6 +328,84 @@ await session.send_and_wait({"prompt": "@doc-writer Document this API"})
 
 </details>
 
+<details>
+<summary><strong>Go</strong></summary>
+
+```go
+session, err := client.CreateSession(&copilot.SessionConfig{
+    CustomAgents: []copilot.CustomAgentConfig{
+        {
+            Name:        "reviewer",
+            Description: "Code review expert",
+            Prompt:      "You are an expert code reviewer...",
+            Infer:       true,
+        },
+        {
+            Name:        "sql-expert",
+            Description: "Database and SQL specialist",
+            Prompt:      "You are a database expert...",
+            Infer:       true,
+        },
+        {
+            Name:        "doc-writer",
+            Description: "Technical documentation writer",
+            Prompt:      "You are a technical writer...",
+            Infer:       true,
+        },
+    },
+})
+if err != nil {
+    log.Fatal(err)
+}
+
+// Use specific agents
+session.SendAndWait(copilot.MessageOptions{Prompt: "@reviewer Check this for bugs"}, 0)
+session.SendAndWait(copilot.MessageOptions{Prompt: "@sql-expert Optimize this query"}, 0)
+session.SendAndWait(copilot.MessageOptions{Prompt: "@doc-writer Document this API"}, 0)
+```
+
+</details>
+
+<details>
+<summary><strong>.NET</strong></summary>
+
+```csharp
+await using var session = await client.CreateSessionAsync(new SessionConfig
+{
+    CustomAgents = new[]
+    {
+        new CustomAgentConfig
+        {
+            Name = "reviewer",
+            Description = "Code review expert",
+            Prompt = "You are an expert code reviewer...",
+            Infer = true,
+        },
+        new CustomAgentConfig
+        {
+            Name = "sql-expert",
+            Description = "Database and SQL specialist",
+            Prompt = "You are a database expert...",
+            Infer = true,
+        },
+        new CustomAgentConfig
+        {
+            Name = "doc-writer",
+            Description = "Technical documentation writer",
+            Prompt = "You are a technical writer...",
+            Infer = true,
+        },
+    },
+});
+
+// Use specific agents
+await session.SendAndWaitAsync(new MessageOptions { Prompt = "@reviewer Check this for bugs" });
+await session.SendAndWaitAsync(new MessageOptions { Prompt = "@sql-expert Optimize this query" });
+await session.SendAndWaitAsync(new MessageOptions { Prompt = "@doc-writer Document this API" });
+```
+
+</details>
+
 ## Agents with Custom Tools
 
 Combine agents with custom tools for powerful workflows:
@@ -401,11 +479,119 @@ session = await client.create_session({
 
 </details>
 
+<details>
+<summary><strong>Go</strong></summary>
+
+```go
+// Define parameter type
+type LintParams struct {
+    Code string `json:"code" jsonschema:"The code to lint"`
+}
+
+// Define the tool
+runLinter := copilot.DefineTool(
+    "run_linter",
+    "Run a linter on Python code",
+    func(params LintParams, inv copilot.ToolInvocation) (map[string]interface{}, error) {
+        // In production, actually run pylint/flake8
+        return map[string]interface{}{"issues": []string{}, "score": 10.0}, nil
+    },
+)
+
+session, err := client.CreateSession(&copilot.SessionConfig{
+    Tools: []copilot.Tool{runLinter},
+    CustomAgents: []copilot.CustomAgentConfig{
+        {
+            Name:        "linter",
+            Description: "Code quality checker with linting",
+            Prompt:      "You check code quality. Use the run_linter tool to analyze code.",
+            Tools:       []string{"run_linter"}, // Only this tool available
+            Infer:       true,
+        },
+    },
+})
+```
+
+</details>
+
+<details>
+<summary><strong>.NET</strong></summary>
+
+```csharp
+using Microsoft.Extensions.AI;
+using System.ComponentModel;
+
+// Define a custom tool
+var runLinter = AIFunctionFactory.Create(
+    ([Description("The code to lint")] string code) =>
+    {
+        // In production, actually run pylint/flake8
+        return new { issues = Array.Empty<string>(), score = 10.0 };
+    },
+    "run_linter",
+    "Run a linter on Python code"
+);
+
+await using var session = await client.CreateSessionAsync(new SessionConfig
+{
+    Tools = [runLinter],
+    CustomAgents = new[]
+    {
+        new CustomAgentConfig
+        {
+            Name = "linter",
+            Description = "Code quality checker with linting",
+            Prompt = "You check code quality. Use the run_linter tool to analyze code.",
+            Tools = new[] { "run_linter" }, // Only this tool available
+            Infer = true,
+        },
+    },
+});
+```
+
+</details>
+
 ## Agents with MCP Servers
 
 Give agents access to specific MCP servers:
 
+<details open>
+<summary><strong>Node.js / TypeScript</strong></summary>
+
+```typescript
+import { CopilotClient } from "@github/copilot-sdk";
+
+const session = await client.createSession({
+    customAgents: [
+        {
+            name: "github-helper",
+            description: "GitHub operations assistant",
+            prompt: "You help with GitHub tasks using the GitHub API.",
+            mcpServers: {
+                github: {
+                    type: "stdio",
+                    command: "npx",
+                    args: ["-y", "@modelcontextprotocol/server-github"],
+                    env: { GITHUB_TOKEN: process.env.GITHUB_TOKEN },
+                    tools: ["*"],
+                },
+            },
+            infer: true,
+        },
+    ],
+});
+```
+
+</details>
+
+<details>
+<summary><strong>Python</strong></summary>
+
 ```python
+import os
+from copilot import CopilotClient
+from copilot.types import CustomAgentConfig
+
 session = await client.create_session({
     "custom_agents": [
         CustomAgentConfig(
@@ -426,6 +612,74 @@ session = await client.create_session({
     ],
 })
 ```
+
+</details>
+
+<details>
+<summary><strong>Go</strong></summary>
+
+```go
+import "os"
+
+session, err := client.CreateSession(&copilot.SessionConfig{
+    CustomAgents: []copilot.CustomAgentConfig{
+        {
+            Name:        "github-helper",
+            Description: "GitHub operations assistant",
+            Prompt:      "You help with GitHub tasks using the GitHub API.",
+            MCPServers: map[string]copilot.MCPServerConfig{
+                "github": {
+                    Type:    "stdio",
+                    Command: "npx",
+                    Args:    []string{"-y", "@modelcontextprotocol/server-github"},
+                    Env:     map[string]string{"GITHUB_TOKEN": os.Getenv("GITHUB_TOKEN")},
+                    Tools:   []string{"*"},
+                },
+            },
+            Infer: true,
+        },
+    },
+})
+```
+
+</details>
+
+<details>
+<summary><strong>.NET</strong></summary>
+
+```csharp
+using GitHub.Copilot.SDK;
+
+await using var session = await client.CreateSessionAsync(new SessionConfig
+{
+    CustomAgents = new[]
+    {
+        new CustomAgentConfig
+        {
+            Name = "github-helper",
+            Description = "GitHub operations assistant",
+            Prompt = "You help with GitHub tasks using the GitHub API.",
+            McpServers = new Dictionary<string, object>
+            {
+                ["github"] = new McpLocalServerConfig
+                {
+                    Type = "stdio",
+                    Command = "npx",
+                    Args = new[] { "-y", "@modelcontextprotocol/server-github" },
+                    Env = new Dictionary<string, string>
+                    {
+                        ["GITHUB_TOKEN"] = Environment.GetEnvironmentVariable("GITHUB_TOKEN")!
+                    },
+                    Tools = new[] { "*" },
+                },
+            },
+            Infer = true,
+        },
+    },
+});
+```
+
+</details>
 
 See [MCP Servers](mcp.md) for detailed MCP configuration.
 
@@ -471,6 +725,49 @@ def handle_event(event):
         print(f"🔧 Tool: {event.data.tool_name}")
 
 session.on(handle_event)
+```
+
+</details>
+
+<details>
+<summary><strong>Go</strong></summary>
+
+```go
+session.On(func(event copilot.SessionEvent) {
+    switch event.Type {
+    case copilot.SessionEventTypeSubagentSelected:
+        fmt.Printf("🤖 Agent selected: %s\n", *event.Data.AgentName)
+    case copilot.SessionEventTypeAssistantMessage:
+        fmt.Printf("📝 Response: %s\n", *event.Data.Content)
+    case copilot.SessionEventTypeToolExecutionStart:
+        fmt.Printf("🔧 Tool: %s\n", *event.Data.ToolName)
+    }
+})
+```
+
+</details>
+
+<details>
+<summary><strong>.NET</strong></summary>
+
+```csharp
+using GitHub.Copilot.SDK;
+
+session.On(e =>
+{
+    switch (e.Type)
+    {
+        case SessionEventType.SubagentSelected:
+            Console.WriteLine($"🤖 Agent selected: {e.Data.AgentName}");
+            break;
+        case SessionEventType.AssistantMessage:
+            Console.WriteLine($"📝 Response: {e.Data.Content}");
+            break;
+        case SessionEventType.ToolExecutionStart:
+            Console.WriteLine($"🔧 Tool: {e.Data.ToolName}");
+            break;
+    }
+});
 ```
 
 </details>

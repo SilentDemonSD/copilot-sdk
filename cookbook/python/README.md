@@ -2,12 +2,14 @@
 
 Practical recipes for the GitHub Copilot SDK with Python. Each recipe is self-contained and ready to run.
 
-> **📖 Core Concepts**: For architecture, events, and sessions, see [Core Concepts](../../docs/core-concepts.md).
+## Installation **Copilot CLI:**
+
+  Refer to the [Getting Started guide](../docs/getting-started.md#prerequisites) for installation instructions.
 
 ## 📚 Recipes
 
 | Recipe | Level | Description |
-|--------|-------|-------------|
+| -------- | ------- | ------------- |
 | [Error Handling](error-handling.md) | Beginner | Exceptions, retries, graceful shutdown |
 | [Multiple Sessions](multiple-sessions.md) | Beginner | Managing independent conversations |
 | [Persisting Sessions](persisting-sessions.md) | Beginner | Save and resume sessions |
@@ -38,7 +40,7 @@ python pr_visualization.py --repo github/copilot-sdk
 ## 🔧 Troubleshooting
 
 | Issue | Solution |
-|-------|----------|
+| ------- | ---------- |
 | `FileNotFoundError: Copilot CLI not found` | Install the Copilot CLI |
 | `ConnectionError` | Check network and CLI status |
 | `TimeoutError` | Increase timeout in `send_and_wait()` |
@@ -56,4 +58,3 @@ client = CopilotClient({"log_level": "debug"})
 3. Update this README
 
 See [CONTRIBUTING.md](../../CONTRIBUTING.md) for details.
-
