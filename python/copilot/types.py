@@ -40,14 +40,14 @@ class FileAttachment(TypedDict):
     """File attachment."""
     type: Literal["file"]
     path: str
-    displayName: str
+    displayName: NotRequired[str]
 
 
 class DirectoryAttachment(TypedDict):
     """Directory attachment."""
     type: Literal["directory"]
     path: str
-    displayName: str
+    displayName: NotRequired[str]
 
 
 class SelectionAttachment(TypedDict):
