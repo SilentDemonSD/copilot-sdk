@@ -503,12 +503,12 @@ export interface MessageOptions {
         | {
               type: "file";
               path: string;
-              displayName: string;
+              displayName?: string;
           }
         | {
               type: "directory";
               path: string;
-              displayName: string;
+              displayName?: string;
           }
         | {
               type: "selection";
