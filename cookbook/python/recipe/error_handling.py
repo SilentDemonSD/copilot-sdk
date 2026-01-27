@@ -128,6 +128,8 @@ async def retry_with_backoff(func, max_retries=3, base_delay=1.0):
                 print(f"  Retry {attempt + 1}/{max_retries} in {delay:.1f}s...")
                 await asyncio.sleep(delay)
 
+    if last_error is None:
+        raise RuntimeError("Max retries exceeded without a captured error.")
     raise last_error
 
 
